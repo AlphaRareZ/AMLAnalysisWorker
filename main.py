@@ -31,10 +31,8 @@ def process_request(message_data):
     try:
         if "expression_file_url" in message_data and "mapping_file_url" in message_data:
             # Download Files
-            # expression_path = download_file(message_data["expression_file_url"])
-            # mapping_path = download_file(message_data["mapping_file_url"])
-            expression_path = r"D:\GraduationProject\Sprints\Sprint5-6-7-8-9-10\Dockerizing\4.1 - Work On This Now\aml_analysis_worker\downloads\TCGA.LAML.sampleMap%2FHiSeqV2_exon.gz"
-            mapping_path = r"D:\GraduationProject\Sprints\Sprint5-6-7-8-9-10\Dockerizing\4.1 - Work On This Now\aml_analysis_worker\downloads\unc_v2_exon_hg19_probe_TCGA"
+            expression_path = download_file(message_data["expression_file_url"])
+            mapping_path = download_file(message_data["mapping_file_url"])
             # Invoke Pipeline
             run_pipeline.main(
                 expression_file=expression_path,
