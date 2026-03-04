@@ -5,7 +5,7 @@ from services.download_service import download_file
 from services.message_producer import create_producer
 from pipelines import run_pipeline
 from services.s3_upload_service import process_and_upload_analysis
-
+from services.clear_service import clear_all_folders
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,6 +61,7 @@ def process_request(message_data):
                 logger.error(
                     f"Failed to publish response for Analysis ID: {correlation_id}"
                 )
+            clear_all_folders()
         else:
             error_response = {
                 "AnalysisID": message_data.get("AnalysisID", "unknown"),
