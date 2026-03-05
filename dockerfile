@@ -19,4 +19,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 4. Run with xvfb-run using the -a flag
-CMD ["xvfb-run", "-a", "python", "main.py"]
+CMD ["python", "main.py"]
