@@ -20,6 +20,8 @@ from biotite.structure import filter_amino_acids
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
+pv.OFF_SCREEN = True
+
 
 def ensure_dir_for_file(file_path):
     """Ensures the directory for a given file path exists."""
@@ -133,6 +135,7 @@ def select_hvgs(expr_file, out_hvgs, out_stats, n_hvgs=2000, min_mean=0.5):
 #     adj = corr.abs() ** power
 #     np.fill_diagonal(adj.values, 0.0)
 #     return adj
+
 
 def build_adjacency(expr_df, power=6):
     corr = expr_df.T.corr()
