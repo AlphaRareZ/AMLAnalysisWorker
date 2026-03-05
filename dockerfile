@@ -2,10 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 1. Install system dependencies FIRST (Better Docker cache utilization)
+# 1. Install system dependencies FIRST 
+# (libgl1-mesa-glx removed as it is obsolete in Debian 12/Bookworm)
 RUN apt-get update && apt-get install -y \
     xvfb \
-    libgl1-mesa-glx \
     libgl1 \
     libxrender1 \
     libglib2.0-0 \
