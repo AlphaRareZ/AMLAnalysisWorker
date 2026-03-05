@@ -4,6 +4,14 @@ import json
 import requests
 import pandas as pd
 import numpy as np
+
+# ---------------------------------------------------------
+# HEADLESS CONFIGURATION: Must happen before pyplot/seaborn
+# ---------------------------------------------------------
+import matplotlib
+
+matplotlib.use("Agg")
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -20,7 +28,16 @@ from biotite.structure import filter_amino_acids
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
+# ---------------------------------------------------------
+# PYVISTA HEADLESS CONFIGURATION
+# ---------------------------------------------------------
 pv.OFF_SCREEN = True
+try:
+    pv.start_xvfb()  # Starts a virtual framebuffer for 3D rendering
+except Exception as e:
+    print(
+        f"Note: Could not start xvfb programmatically. Ensure xvfb-run is used or ignore if rendering works. Error: {e}"
+    )
 
 
 def ensure_dir_for_file(file_path):
