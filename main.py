@@ -30,31 +30,23 @@ def process_request(message_data):
 
     try:
         if "expression_file_url" in message_data and "mapping_file_url" in message_data:
-            # Download Files
-            # expression_path = download_file(message_data["expression_file_url"])
-            # mapping_path = download_file(message_data["mapping_file_url"])
-            # # Invoke Pipeline
-            # run_pipeline.main(
-            #     expression_file=expression_path,
-            #     mapping_file=mapping_path,
-            #     config_path="./config.json",
-            # )
+            Download Files
+            expression_path = download_file(message_data["expression_file_url"])
+            mapping_path = download_file(message_data["mapping_file_url"])
+            # Invoke Pipeline
+            run_pipeline.main(
+                expression_file=expression_path,
+                mapping_file=mapping_path,
+                config_path="./config.json",
+            )
 
-            # # Upload Files to Cloudflare R2 and retrieve urls
-            # response_data = process_and_upload_analysis(message_data["AnalysisID"])
+            # Upload Files to Cloudflare R2 and retrieve urls
+            response_data = process_and_upload_analysis(message_data["AnalysisID"])
 
-            # # Print the formatted JSON output
-            # print("\nFinal Response Message:")
-            # print(json.dumps(response_data, indent=4))
-            response_data = {
-                "AnalysisID": message_data["AnalysisID"],
-                "status": "success",
-                "message": "Pipeline executed and results uploaded successfully",
-                "results": {
-                    "result_file_url": "https://example.com/result_file.csv",
-                    "log_file_url": "https://example.com/log_file.txt",
-                },
-            }
+            # Print the formatted JSON output
+            print("\nFinal Response Message:")
+            print(json.dumps(response_data, indent=4))
+
             # Publish response message to response_queue
             correlation_id = message_data.get("AnalysisID", None)
             success = producer.publish_message(
