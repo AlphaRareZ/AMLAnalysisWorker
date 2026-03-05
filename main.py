@@ -45,10 +45,10 @@ def process_request(message_data):
             # Upload Files to Cloudflare R2 and retrieve urls
             response_data = process_and_upload_analysis(message_data["AnalysisID"])
 
+            response_data = get_top_10_rows_from_output("Output", dest=response_data)
             # Print the formatted JSON output
             print("\nFinal Response Message:")
             print(json.dumps(response_data, indent=4))
-            response_data = get_top_10_rows_from_output("Output", dest=response_data)
             # Publish response message to response_queue
             correlation_id = message_data.get("AnalysisID", None)
             success = producer.publish_message(
