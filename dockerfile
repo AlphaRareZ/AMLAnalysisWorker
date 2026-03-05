@@ -18,5 +18,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 3. Copy the rest of your application code
 COPY . .
 
-# 4. Run with xvfb-run using the -a flag
 CMD ["python", "main.py"]

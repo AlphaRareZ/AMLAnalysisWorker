@@ -40,7 +40,7 @@ class MessageProducer:
 
             # Declare exchange
             self.channel.exchange_declare(
-                exchange=self.exchange_name, exchange_type="direct", durable=True
+                exchange=self.exchange_name, exchange_type="direct",
             )
 
             # Declare queue
