@@ -1,11 +1,13 @@
 import json
 import logging
 from rabbit_mq.rabbit_mq_consumer import create_consumer
+from services.csv_top_10_rows_service import get_top_10_rows_from_output
 from services.download_service import download_file
 from services.message_producer import create_producer
 from pipelines import run_pipeline
 from services.s3_upload_service import process_and_upload_analysis
 from services.clear_service import clear_all_folders
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,7 +48,7 @@ def process_request(message_data):
             # Print the formatted JSON output
             print("\nFinal Response Message:")
             print(json.dumps(response_data, indent=4))
-
+            response_data = get_top_10_rows_from_output("Output", dest=response_data)
             # Publish response message to response_queue
             correlation_id = message_data.get("AnalysisID", None)
             success = producer.publish_message(
