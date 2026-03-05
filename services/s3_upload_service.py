@@ -1,6 +1,7 @@
 import os
 import json
 import boto3
+import urllib.parse # Required to safely encode URLs
 from botocore.config import Config
 
 # Load config
@@ -11,7 +12,8 @@ ACCOUNT_ID = config["CFR2"]["ACCOUNT_ID"]
 ACCESS_KEY = config["CFR2"]["ACCESS_KEY"]
 SECRET_KEY = config["CFR2"]["SECRET_KEY"]
 BUCKET_NAME = config["CFR2"]["BUCKET_NAME"]
-PUBLIC_DOMAIN = config["CFR2"]["PUBLIC_DOMAIN"] if "PUBLIC_DOMAIN" in config["CFR2"] else None
+# Ensure no trailing slash on the public domain for clean URL building
+PUBLIC_DOMAIN = config["CFR2"]["PUBLIC_DOMAIN"].rstrip('/') if "PUBLIC_DOMAIN" in config["CFR2"] else None
 
 # Initialize S3 Client
 s3 = boto3.client(
@@ -27,13 +29,17 @@ def process_and_upload_analysis(analysis_id):
     """
     Navigates through the local 'Output' folder and uploads every file 
     directly into the Analysis ID folder in S3, flattening the structure.
-    Returns their URLs using the file name as the dictionary key.
+    Returns their clean public URLs using the file name as the dictionary key.
     """
     local_folder = "Output" 
     
     if not os.path.exists(local_folder):
         print(f"Error: Local folder '{local_folder}' does not exist.")
         return {"success": False, "analysis_id": analysis_id, "links": {}, "error": "Output folder not found"}
+
+    if not PUBLIC_DOMAIN:
+        print("Error: PUBLIC_DOMAIN is not set in config.json")
+        return {"success": False, "error": "Missing PUBLIC_DOMAIN config"}
 
     result_links = {}
     uploaded_count = 0
@@ -53,30 +59,10 @@ def process_and_upload_analysis(analysis_id):
                 print(f"✓ Uploaded: {object_name}")
                 uploaded_count += 1
                 
-                # Check file extension to determine expiration strategy
-                file_ext = os.path.splitext(file)[1].lower()
-                
-                if file_ext == '.csv':
-                    # CSV: 1 Hour Expiration
-                    url = s3.generate_presigned_url(
-                        ClientMethod="get_object",
-                        Params={"Bucket": BUCKET_NAME, "Key": object_name},
-                        ExpiresIn=3600, 
-                    )
-                elif file_ext in ['.png', '.jpg', '.jpeg', '.gif']:
-                    # Images: "Unlimited" (7 days max for presigned URLs)
-                    url = s3.generate_presigned_url(
-                        ClientMethod="get_object",
-                        Params={"Bucket": BUCKET_NAME, "Key": object_name},
-                        ExpiresIn=604800, 
-                    )
-                else:
-                    # Default expiration for other types (e.g., 24 hours)
-                    url = s3.generate_presigned_url(
-                        ClientMethod="get_object",
-                        Params={"Bucket": BUCKET_NAME, "Key": object_name},
-                        ExpiresIn=86400,
-                    )
+                # 3. Create the clean public URL
+                # quote() handles spaces and special characters safely
+                safe_object_name = urllib.parse.quote(object_name)
+                url = f"{PUBLIC_DOMAIN}/{safe_object_name}"
                 
                 # Add the URL to our response dictionary using the filename as the key
                 result_links[file] = url
