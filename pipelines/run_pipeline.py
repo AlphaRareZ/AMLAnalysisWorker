@@ -64,19 +64,27 @@ def log(*args, sep=" ", end="\n", flush=False):
 
 def map_exons_to_genes(expression_file, mapping_file, output_file):
     log("--------------------Mapping Exons To Genes--------------------")
-    expr = pd.read_csv(expression_file, sep="\t", index_col=0)
 
+    # Load expression data (using float32 to cut RAM usage in half)
+    expr = pd.read_csv(expression_file, sep="\t", index_col=0, dtype=np.float32)
+
+    # Load and format the mapping file
     mapping = (
-        pd.read_csv(mapping_file, sep="\t")[["id", "gene"]].dropna().drop_duplicates()
+        pd.read_csv(mapping_file, sep="\t")[["id", "gene"]]
+        .dropna()
+        .drop_duplicates()
+        .set_index("id")  # Keep "id" as the index to match expr
     )
 
-    mapping = mapping.rename(columns={"id": "exon"}).set_index("exon")
-    expr = expr.loc[expr.index.intersection(mapping.index)]
-    expr["gene"] = mapping.loc[expr.index, "gene"]
+    # The Fix: Use an inner join instead of adding a column.
+    # This automatically filters to the intersection AND adds the 'gene' column
+    # cleanly without fragmenting the memory.
+    expr = expr.join(mapping["gene"], how="inner")
 
+    # Group by the gene and calculate the mean
     gene_expr = expr.groupby("gene").mean()
 
-    ensure_dir_for_file(output_file)  # Create dir if needed
+    ensure_dir_for_file(output_file)
     gene_expr.to_csv(output_file)
 
     log("Gene-level expression saved to:", output_file)
