@@ -4,28 +4,27 @@ import json
 import requests
 import pandas as pd
 import numpy as np
+import gc  # Added for manual garbage collection
+from datetime import datetime
 
-# ---------------------------------------------------------
-# HEADLESS CONFIGURATION: Must happen before pyplot/seaborn
-# ---------------------------------------------------------
+# Headless configuration
 import matplotlib
 
 matplotlib.use("Agg")
-
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+
+# Imports for analysis
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, minmax_scale
 import umap.umap_ as umap
 import networkx as nx
 from networkx.algorithms import community
-from scipy.cluster.hierarchy import linkage, dendrogram
 import mygene
 from biotite.structure.io.pdb import PDBFile
 from biotite.structure import filter_amino_acids
-from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime
+
 
 # import pyvista as pv
 # # ---------------------------------------------------------
@@ -38,10 +37,15 @@ from datetime import datetime
 #     print(
 #         f"Note: Could not start xvfb programmatically. Ensure xvfb-run is used or ignore if rendering works. Error: {e}"
 #     )
+def clear_memory():
+    """Force garbage collection and clear internal caches."""
+    plt.close("all")
+    gc.collect()
 
 
 def ensure_dir_for_file(file_path):
     """Ensures the directory for a given file path exists."""
+    clear_memory()
     directory = os.path.dirname(file_path)
     if directory and not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
@@ -49,6 +53,7 @@ def ensure_dir_for_file(file_path):
 
 def log(*args, sep=" ", end="\n", flush=False):
     """Writes a timestamped message to the global log file."""
+    clear_memory()
     message = sep.join(str(arg) for arg in args)
     timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S] ")
 
@@ -82,9 +87,10 @@ def log(*args, sep=" ", end="\n", flush=False):
 #     log("Gene-level expression saved to:", output_file)
 #     log("Final shape:", gene_expr.shape)
 
+
 def map_exons_to_genes(expression_file, mapping_file, output_file):
     log("--------------------Mapping Exons To Genes--------------------")
-    
+
     # Load expression data (using float32 to cut RAM usage in half)
     expr = pd.read_csv(expression_file, sep="\t", index_col=0)
 
@@ -93,25 +99,29 @@ def map_exons_to_genes(expression_file, mapping_file, output_file):
         pd.read_csv(mapping_file, sep="\t")[["id", "gene"]]
         .dropna()
         .drop_duplicates()
-        .set_index("id") # Keep "id" as the index to match expr
+        .set_index("id")  # Keep "id" as the index to match expr
     )
 
     # The Fix: Use an inner join instead of adding a column.
-    # This automatically filters to the intersection AND adds the 'gene' column 
+    # This automatically filters to the intersection AND adds the 'gene' column
     # cleanly without fragmenting the memory.
     expr = expr.join(mapping["gene"], how="inner")
 
     # Group by the gene and calculate the mean
     gene_expr = expr.groupby("gene").mean()
 
-    ensure_dir_for_file(output_file) 
+    ensure_dir_for_file(output_file)
     gene_expr.to_csv(output_file)
 
     log("Gene-level expression saved to:", output_file)
     log("Final shape:", gene_expr.shape)
 
+    clear_memory()
+
+
 def filter_protein_coding(input_file, output_file, batch_size=1000):
     log("--------------------Filtering Protein Coding--------------------")
+    clear_memory()
     mg = mygene.MyGeneInfo()
     gene_expr = pd.read_csv(input_file, index_col=0)
 
@@ -143,11 +153,13 @@ def filter_protein_coding(input_file, output_file, batch_size=1000):
 
 
 def normalize_log(expr):
+    clear_memory()
     return np.log2(expr + 1.0)
 
 
 def select_hvgs(expr_file, out_hvgs, out_stats, n_hvgs=2000, min_mean=0.5):
     log("--------------------Selecting HVGS--------------------")
+    clear_memory()
     expr = pd.read_csv(expr_file, index_col=0)
     expr_norm = normalize_log(expr)
 
@@ -182,6 +194,7 @@ def select_hvgs(expr_file, out_hvgs, out_stats, n_hvgs=2000, min_mean=0.5):
 
 
 def build_adjacency(expr_df, power=6):
+    clear_memory()
     corr = expr_df.T.corr()
     adj = corr.abs() ** power
     np.fill_diagonal(adj.to_numpy().copy(), 0.0)
@@ -189,6 +202,7 @@ def build_adjacency(expr_df, power=6):
 
 
 def module_detection(adj_matrix):
+    clear_memory()
     G = nx.from_pandas_adjacency(adj_matrix)
     communities_generator = community.greedy_modularity_communities(G, weight="weight")
     communities = list(communities_generator)
@@ -197,6 +211,7 @@ def module_detection(adj_matrix):
 
 
 def module_eigengenes(expr_df, modules):
+    clear_memory()
     eig = {}
     for mname, genes in modules.items():
         if len(genes) < 2:
@@ -210,6 +225,7 @@ def module_eigengenes(expr_df, modules):
 
 
 def intramodular_connectivity(adj, modules):
+    clear_memory()
     k_within = {}
     for mname, genes in modules.items():
         if not genes:
@@ -231,6 +247,7 @@ def rank_and_annotate(
     top_n=20,
 ):
     log("--------------------Rank Hubs and Annotate--------------------")
+    clear_memory()
     # --- Load files ---
     try:
         hvgs = pd.read_csv(hvgs_file, index_col=0)
@@ -316,6 +333,7 @@ def rank_and_annotate(
 
     # --- Targetability flag ---
     def flag_targetable(go):
+        clear_memory()
         if not isinstance(go, dict):
             return ""
         cc = go.get("CC")
@@ -351,6 +369,7 @@ def rank_and_annotate(
 
 def fetch_alphafold(csv_file, out_dir, out_csv_report):
     log("--------------------Fetching Structures--------------------")
+    clear_memory()
     # Ensure output directories exist
     os.makedirs(out_dir, exist_ok=True)
     ensure_dir_for_file(out_csv_report)
@@ -436,11 +455,13 @@ def fetch_alphafold(csv_file, out_dir, out_csv_report):
 
 def render_proteins(*args, **kwargs):
     log(" Skipping rendering — py3Dmol not available in script environment.")
+    clear_memory()
     return
 
 
 def combine_images(image_dir, out_file):
     log("--------------------Combining Images--------------------")
+    clear_memory()
     if not os.path.exists(image_dir):
         log(f" Image directory not found, skipping: {image_dir}")
         return
@@ -486,7 +507,7 @@ def combine_images(image_dir, out_file):
 
 # Main Pipeline
 def main(expression_file, mapping_file, config_path="config.json"):
-
+    clear_memory()
     # --- 1. Load Configuration ---
     global LOG_FILE_PATH
     try:
@@ -503,6 +524,8 @@ def main(expression_file, mapping_file, config_path="config.json"):
     LOG_FILE_PATH = config["files"]["log_file"]
     ensure_dir_for_file(LOG_FILE_PATH)
 
+    clear_memory()
+
     log("Starting a New Process")
     log(f"Loaded configuration from {config_path}")
 
@@ -517,10 +540,13 @@ def main(expression_file, mapping_file, config_path="config.json"):
 
     # --- 2. Pre-processing ---
     map_exons_to_genes(expression_file, mapping_file, gene_expr_raw)
+    clear_memory()
     filter_protein_coding(gene_expr_raw, gene_expr_coding)
+    clear_memory()
     select_hvgs(gene_expr_coding, hvgs_file, hvgs_stats_file, n_hvgs=2000, min_mean=0.5)
 
     # --- 3. Coexpression and Modules ---
+    clear_memory()
     log("--------------------Coexpression and Modules--------------------")
     try:
         expr = pd.read_csv(hvgs_file, index_col=0)
@@ -552,8 +578,8 @@ def main(expression_file, mapping_file, config_path="config.json"):
     except Exception as e:
         log(f"Error during module detection: {e}")
         return
-
     # --- 4. EDA For the filtered Genes (Simple Variance-based) ---
+    clear_memory()
     log("--------------------EDA For the filtered Genes--------------------")
     try:
         expr = pd.read_csv(gene_expr_coding, index_col=0)
@@ -670,6 +696,7 @@ def main(expression_file, mapping_file, config_path="config.json"):
         # return
 
     # --- 6. Advanced Biomarkers EDA (based on WGCNA-ranked genes) ---
+    clear_memory()
     log("--------------------Advanced Biomarkers EDA--------------------")
     try:
         expr = pd.read_csv(gene_expr_raw, index_col=0)  # full matrix
@@ -815,6 +842,7 @@ def main(expression_file, mapping_file, config_path="config.json"):
             "combined_image"
         ],  # "results/proteins_3d/all_proteins_combined.png"
     )
+    clear_memory()
 
     # log(
     #     "--------------------Viewing & Exporting Proteins (PyVista)--------------------"
