@@ -789,132 +789,132 @@ def main(expression_file, mapping_file, config_path="config.json"):
         ],  # "results/proteins_3d/all_proteins_combined.png"
     )
 
-    log(
-        "--------------------Viewing & Exporting Proteins (PyVista)--------------------"
-    )
+    # log(
+    #     "--------------------Viewing & Exporting Proteins (PyVista)--------------------"
+    # )
 
-    csv_file = protein_cfg["fetch_report"]
-    pdb_dir = dirs_cfg["protein_structures"]
-    img_dir = dirs_cfg["protein_images"]  # This is the *output* dir for this step
-    collage_file = protein_cfg["collage"]
+    # csv_file = protein_cfg["fetch_report"]
+    # pdb_dir = dirs_cfg["protein_structures"]
+    # img_dir = dirs_cfg["protein_images"]  # This is the *output* dir for this step
+    # collage_file = protein_cfg["collage"]
 
-    os.makedirs(img_dir, exist_ok=True)  # Ensure output dir exists
+    # os.makedirs(img_dir, exist_ok=True)  # Ensure output dir exists
 
-    try:
-        df = pd.read_csv(csv_file)
-    except FileNotFoundError:
-        log(f"Cannot generate protein images, report file not found: {csv_file}")
-        df = pd.DataFrame()  # empty
+    # try:
+    #     df = pd.read_csv(csv_file)
+    # except FileNotFoundError:
+    #     log(f"Cannot generate protein images, report file not found: {csv_file}")
+    #     df = pd.DataFrame()  # empty
 
-    saved_images = []
+    # saved_images = []
 
-    for _, row in df.iterrows():
-        if row.get("status") != "downloaded":
-            log(f" Skipping {row.get('gene')} (status: {row.get('status')})")
-            continue
+    # for _, row in df.iterrows():
+    #     if row.get("status") != "downloaded":
+    #         log(f" Skipping {row.get('gene')} (status: {row.get('status')})")
+    #         continue
 
-        protein_id = str(row.get("gene", row.get("accession", "unknown")))
-        # Use the PDB file path from the report
-        pdb_file = row.get("pdb_file")
+    #     protein_id = str(row.get("gene", row.get("accession", "unknown")))
+    #     # Use the PDB file path from the report
+    #     pdb_file = row.get("pdb_file")
 
-        if not pdb_file or not os.path.exists(pdb_file):
-            log(f" Skipping {protein_id} (PDB file not found at {pdb_file})")
-            continue
+    #     if not pdb_file or not os.path.exists(pdb_file):
+    #         log(f" Skipping {protein_id} (PDB file not found at {pdb_file})")
+    #         continue
 
-        try:
-            pdb = PDBFile.read(pdb_file)
-            atoms = pdb.get_structure()[0]
-            atoms = atoms[filter_amino_acids(atoms)]
-            coords = atoms.coord
+    #     try:
+    #         pdb = PDBFile.read(pdb_file)
+    #         atoms = pdb.get_structure()[0]
+    #         atoms = atoms[filter_amino_acids(atoms)]
+    #         coords = atoms.coord
 
-            if "bfactor" in atoms.get_annotation_categories():
-                scalars = atoms.bfactor
-                cmap = "plasma"
-                clim = [0, 100]
-            else:
-                scalars = np.arange(len(coords))
-                cmap = "rainbow"
-                clim = None
+    #         if "bfactor" in atoms.get_annotation_categories():
+    #             scalars = atoms.bfactor
+    #             cmap = "plasma"
+    #             clim = [0, 100]
+    #         else:
+    #             scalars = np.arange(len(coords))
+    #             cmap = "rainbow"
+    #             clim = None
 
-            plotter = pv.Plotter(off_screen=True)
-            plotter.add_points(
-                coords,
-                scalars=scalars,
-                render_points_as_spheres=True,
-                point_size=12,
-                cmap=cmap,
-                clim=clim,
-            )
+    #         plotter = pv.Plotter(off_screen=True)
+    #         plotter.add_points(
+    #             coords,
+    #             scalars=scalars,
+    #             render_points_as_spheres=True,
+    #             point_size=12,
+    #             cmap=cmap,
+    #             clim=clim,
+    #         )
 
-            # This is the output path for the individual image
-            out_path = os.path.join(img_dir, f"{protein_id}.png")
-            # We don't need ensure_dir_for_file; os.makedirs(img_dir) was called
+    #         # This is the output path for the individual image
+    #         out_path = os.path.join(img_dir, f"{protein_id}.png")
+    #         # We don't need ensure_dir_for_file; os.makedirs(img_dir) was called
 
-            plotter.screenshot(out_path)
-            plotter.close()
+    #         plotter.screenshot(out_path)
+    #         plotter.close()
 
-            img = Image.open(out_path)
-            draw = ImageDraw.Draw(img)
-            try:
-                font = ImageFont.truetype("arial.ttf", 20)
-            except IOError:
-                font = ImageFont.load_default()
+    #         img = Image.open(out_path)
+    #         draw = ImageDraw.Draw(img)
+    #         try:
+    #             font = ImageFont.truetype("arial.ttf", 20)
+    #         except IOError:
+    #             font = ImageFont.load_default()
 
-            text = protein_id
-            try:
-                bbox = draw.textbbox((0, 0), text, font=font)
-                text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-            except AttributeError:
-                # Fallback for older PIL versions
-                text_w, text_h = draw.textsize(text, font=font)
+    #         text = protein_id
+    #         try:
+    #             bbox = draw.textbbox((0, 0), text, font=font)
+    #             text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    #         except AttributeError:
+    #             # Fallback for older PIL versions
+    #             text_w, text_h = draw.textsize(text, font=font)
 
-            x = (img.width - text_w) // 2
-            y = img.height - text_h - 5
-            draw.text((x, y), text, fill=(0, 0, 0), font=font)
-            img.save(out_path)
+    #         x = (img.width - text_w) // 2
+    #         y = img.height - text_h - 5
+    #         draw.text((x, y), text, fill=(0, 0, 0), font=font)
+    #         img.save(out_path)
 
-            saved_images.append(out_path)
-            log(f" ✅ Saved image for {protein_id}")
+    #         saved_images.append(out_path)
+    #         log(f" ✅ Saved image for {protein_id}")
 
-        except Exception as e:
-            log(f" ❌ Failed to render {protein_id}: {e}")
+    #     except Exception as e:
+    #         log(f" ❌ Failed to render {protein_id}: {e}")
 
-    # --- Create Collage ---
-    if saved_images:
-        imgs = [Image.open(p) for p in saved_images]
-        n_cols = 5
-        n_rows = (len(imgs) + n_cols - 1) // n_cols
+    # # --- Create Collage ---
+    # if saved_images:
+    #     imgs = [Image.open(p) for p in saved_images]
+    #     n_cols = 5
+    #     n_rows = (len(imgs) + n_cols - 1) // n_cols
 
-        cell_w, cell_h = 300, 380
-        collage = Image.new("RGB", (n_cols * cell_w, n_rows * cell_h), (255, 255, 255))
-        draw = ImageDraw.Draw(collage)
+    #     cell_w, cell_h = 300, 380
+    #     collage = Image.new("RGB", (n_cols * cell_w, n_rows * cell_h), (255, 255, 255))
+    #     draw = ImageDraw.Draw(collage)
 
-        try:
-            font = ImageFont.truetype("arial.ttf", 24)
-        except IOError:
-            font = ImageFont.load_default()
+    #     try:
+    #         font = ImageFont.truetype("arial.ttf", 24)
+    #     except IOError:
+    #         font = ImageFont.load_default()
 
-        for idx, img in enumerate(imgs):
-            img = img.resize((300, 300))
-            x = (idx % n_cols) * cell_w
-            y = (idx // n_cols) * cell_h
-            collage.paste(img, (x, y))
+    #     for idx, img in enumerate(imgs):
+    #         img = img.resize((300, 300))
+    #         x = (idx % n_cols) * cell_w
+    #         y = (idx // n_cols) * cell_h
+    #         collage.paste(img, (x, y))
 
-            protein_name = os.path.splitext(os.path.basename(saved_images[idx]))[0]
-            try:
-                bbox = draw.textbbox((0, 0), protein_name, font=font)
-                text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-            except AttributeError:
-                text_w, text_h = draw.textsize(protein_name, font=font)
+    #         protein_name = os.path.splitext(os.path.basename(saved_images[idx]))[0]
+    #         try:
+    #             bbox = draw.textbbox((0, 0), protein_name, font=font)
+    #             text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    #         except AttributeError:
+    #             text_w, text_h = draw.textsize(protein_name, font=font)
 
-            text_x = x + (cell_w - text_w) // 2
-            text_y = y + 310
-            draw.text((text_x, text_y), protein_name, fill=(0, 0, 0), font=font)
+    #         text_x = x + (cell_w - text_w) // 2
+    #         text_y = y + 310
+    #         draw.text((text_x, text_y), protein_name, fill=(0, 0, 0), font=font)
 
-        ensure_dir_for_file(collage_file)  # Create dir
-        collage.save(collage_file)
-        log(f" 🖼️ Collage saved -> {collage_file}")
-    else:
-        log(" No protein images generated, skipping collage.")
+    #     ensure_dir_for_file(collage_file)  # Create dir
+    #     collage.save(collage_file)
+    #     log(f" 🖼️ Collage saved -> {collage_file}")
+    # else:
+    #     log(" No protein images generated, skipping collage.")
 
-    log("Process Ended ✅")
+    # log("Process Ended ✅")
