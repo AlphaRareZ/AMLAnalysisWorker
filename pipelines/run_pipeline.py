@@ -184,7 +184,7 @@ def select_hvgs(expr_file, out_hvgs, out_stats, n_hvgs=2000, min_mean=0.5):
 def build_adjacency(expr_df, power=6):
     corr = expr_df.T.corr()
     adj = corr.abs() ** power
-    np.fill_diagonal(adj.to_numpy().copy(), 0.0)
+    np.fill_diagonal(adj.values, 0.0)
     return adj
 
 
@@ -577,7 +577,7 @@ def main(expression_file, mapping_file, config_path="config.json"):
         summary_stats.to_csv(simple_cfg["summary"])
 
         plt.figure(figsize=(8, 5))
-        sns.histplot(top20_df.to_numpy().copy().flatten(), bins=50, kde=True)
+        sns.histplot(top20_df.values.flatten(), bins=50, kde=True)
         plt.title("Expression Distribution (Top 20 Biomarkers)")
         ensure_dir_for_file(simple_cfg["distribution_png"])
         plt.savefig(simple_cfg["distribution_png"])
