@@ -22,22 +22,22 @@ import networkx as nx
 from networkx.algorithms import community
 from scipy.cluster.hierarchy import linkage, dendrogram
 import mygene
-import pyvista as pv
 from biotite.structure.io.pdb import PDBFile
 from biotite.structure import filter_amino_acids
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
-# ---------------------------------------------------------
-# PYVISTA HEADLESS CONFIGURATION
-# ---------------------------------------------------------
-pv.OFF_SCREEN = True
-try:
-    pv.start_xvfb()  # Starts a virtual framebuffer for 3D rendering
-except Exception as e:
-    print(
-        f"Note: Could not start xvfb programmatically. Ensure xvfb-run is used or ignore if rendering works. Error: {e}"
-    )
+# import pyvista as pv
+# # ---------------------------------------------------------
+# # PYVISTA HEADLESS CONFIGURATION
+# # ---------------------------------------------------------
+# pv.OFF_SCREEN = True
+# try:
+#     pv.start_xvfb()  # Starts a virtual framebuffer for 3D rendering
+# except Exception as e:
+#     print(
+#         f"Note: Could not start xvfb programmatically. Ensure xvfb-run is used or ignore if rendering works. Error: {e}"
+#     )
 
 
 def ensure_dir_for_file(file_path):
