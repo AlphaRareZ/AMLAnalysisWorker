@@ -35,6 +35,7 @@ def process_request(message_data):
             # Download Files
             expression_path = download_file(message_data["expression_file_url"])
             mapping_path = download_file(message_data["mapping_file_url"])
+            
             # Invoke Pipeline
             run_pipeline.main(
                 expression_file=expression_path,
