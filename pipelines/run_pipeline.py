@@ -3,11 +3,11 @@ import pandas as pd
 from logging import getLogger
 
 # بنستورد الـ Functions من الفايلات بتاعتنا
-from utils import ensure_dir_for_file
-from data_preprocessing import map_exons_to_genes, filter_protein_coding, select_hvgs
-from network_analysis import build_adjacency, module_detection, module_eigengenes, intramodular_connectivity, rank_and_annotate
-from  building_structures import fetch_alphafold, render_proteins, combine_images
-from eda_analysis import run_simple_eda, run_advanced_eda
+from .utils import ensure_dir_for_file
+from .data_preprocessing import map_exons_to_genes, filter_protein_coding, select_hvgs
+from .network_analysis import build_adjacency, module_detection, module_eigengenes, intramodular_connectivity, rank_and_annotate
+from  .building_structures import fetch_alphafold, render_proteins, combine_images
+from .eda_analysis import run_simple_eda, run_advanced_eda
 logger = getLogger(__name__)
 
 # Main Pipeline

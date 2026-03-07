@@ -4,7 +4,7 @@ import requests
 import pandas as pd
 import logging
 import matplotlib
-from utils import ensure_dir_for_file
+from .utils import ensure_dir_for_file
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt

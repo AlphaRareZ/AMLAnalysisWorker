@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
-from utils import ensure_dir_for_file
+from .utils import ensure_dir_for_file
 from mygene import MyGeneInfo
 
 logger = logging.getLogger(__name__)

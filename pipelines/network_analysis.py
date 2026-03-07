@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import minmax_scale
 from logging import getLogger
 import json
-from utils import ensure_dir_for_file
+from .utils import ensure_dir_for_file
 from mygene import MyGeneInfo
 
 logger = getLogger(__name__)

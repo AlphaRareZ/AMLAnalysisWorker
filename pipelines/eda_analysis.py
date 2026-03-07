@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 import umap
 import networkx as nx
 from scipy.cluster.hierarchy import linkage, dendrogram
-from utils import ensure_dir_for_file, log
+from .utils import ensure_dir_for_file
 from logging import getLogger
 
 logger = getLogger(__name__)
