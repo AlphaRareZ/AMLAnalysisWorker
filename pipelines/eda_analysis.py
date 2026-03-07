@@ -1,5 +1,3 @@
-# eda_analysis.py
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -10,11 +8,11 @@ import networkx as nx
 from scipy.cluster.hierarchy import linkage, dendrogram
 from .utils import ensure_dir_for_file
 from logging import getLogger
+import gc
 
 logger = getLogger(__name__)
 
 def run_simple_eda(gene_expr_coding, files_cfg):
-    # --- 4. EDA For the filtered Genes (Simple Variance-based) ---
     logger.info("--------------------EDA For the filtered Genes--------------------")
     try:
         expr = pd.read_csv(gene_expr_coding, index_col=0)
@@ -94,7 +92,11 @@ def run_simple_eda(gene_expr_coding, files_cfg):
         plt.title("Gene Co-expression Network (Top 20 Biomarkers)")
         ensure_dir_for_file(simple_cfg["network_png"])
         plt.savefig(simple_cfg["network_png"])
-        plt.close()
+        
+        # Comprehensive Cleanup
+        plt.close('all') # Clear all matplotlib figures from memory
+        del expr, gene_var, filtered_genes, top20, top20_df, pca_res, pca_df, umap_res, umap_df, corr, G
+        gc.collect()
 
     except Exception as e:
         logger.info(f"Error during simple EDA: {e}")
@@ -104,7 +106,7 @@ def run_simple_eda(gene_expr_coding, files_cfg):
 def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
     logger.info("--------------------Advanced Biomarkers EDA--------------------")
     try:
-        expr = pd.read_csv(gene_expr_raw, index_col=0)  # full matrix
+        expr = pd.read_csv(gene_expr_raw, index_col=0) 
         biomarkers = pd.read_csv(ranked_cfg["top20_annotated"], index_col=0)
         genes = biomarkers.index.tolist()
 
@@ -113,7 +115,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
 
         adv_cfg = files_cfg["advanced_biomarkers"]
 
-        # 1. Heatmap
         sns.clustermap(
             expr.loc[genes],
             cmap="RdBu_r",
@@ -128,7 +129,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.savefig(adv_cfg["heatmap"])
         plt.close()
 
-        # 2. PCA
         pca = PCA(n_components=2)
         scaled = StandardScaler().fit_transform(expr.loc[genes].T)
         pca_res = pca.fit_transform(scaled)
@@ -140,7 +140,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.savefig(adv_cfg["pca"])
         plt.close()
 
-        # 3. Correlation Heatmap
         corr = expr.loc[genes].T.corr()
         plt.figure(figsize=(10, 8))
         sns.heatmap(
@@ -157,7 +156,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.savefig(adv_cfg["correlation_heatmap"])
         plt.close()
 
-        # 4. Biomarker Network
         G = nx.Graph()
         for g1 in corr.columns:
             for g2 in corr.columns:
@@ -172,9 +170,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.savefig(adv_cfg["network"])
         plt.close()
 
-        # ... (Other plots) ...
-
-        # 6. Boxplots
         plt.figure(figsize=(14, 6))
         expr.loc[genes].T.boxplot(rot=90)
         plt.ylabel("Expression")
@@ -184,7 +179,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.savefig(adv_cfg["boxplots"])
         plt.close()
 
-        # 7. Violin plots
         plt.figure(figsize=(14, 6))
         sns.violinplot(data=expr.loc[genes].T)
         plt.xticks(rotation=90)
@@ -195,7 +189,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.savefig(adv_cfg["violins"])
         plt.close()
 
-        # 9. Hierarchical Dendrogram (Samples)
         Z = linkage(expr.loc[genes].T, method="average", metric="euclidean")
         plt.figure(figsize=(10, 6))
         dendrogram(Z, labels=expr.columns, leaf_rotation=90, leaf_font_size=8)
@@ -205,7 +198,6 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.savefig(adv_cfg["dendrogram"])
         plt.close()
 
-        # 10. UMAP Projection
         reducer = umap.UMAP(random_state=42)
         umap_res = reducer.fit_transform(expr.loc[genes].T)
         umap_df = pd.DataFrame(umap_res, columns=["UMAP1", "UMAP2"], index=expr.columns)
@@ -214,9 +206,13 @@ def run_advanced_eda(gene_expr_raw, ranked_cfg, files_cfg):
         plt.title("UMAP of Samples (Top 20 Biomarkers)")
         ensure_dir_for_file(adv_cfg["umap"])
         plt.savefig(adv_cfg["umap"])
-        plt.close()
-
+        
         logger.info("All advanced biomarker plots generated in Biomarkers_results_graphs/")
+
+        # Comprehensive Cleanup
+        plt.close('all')
+        del expr, biomarkers, genes, scaled, pca_res, pca_df, corr, G, Z, umap_res, umap_df
+        gc.collect()
 
     except FileNotFoundError:
         logger.info(

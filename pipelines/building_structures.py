@@ -3,6 +3,7 @@ import math
 import requests
 import pandas as pd
 import logging
+import gc
 import matplotlib
 from .utils import ensure_dir_for_file
 matplotlib.use("Agg")
@@ -10,13 +11,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-
 logger = logging.getLogger(__name__)
-
 
 def fetch_alphafold(csv_file, out_dir, out_csv_report):
     logger.info("--------------------Fetching Structures--------------------")
-    # Ensure output directories exist
     os.makedirs(out_dir, exist_ok=True)
     ensure_dir_for_file(out_csv_report)
 
@@ -24,7 +22,7 @@ def fetch_alphafold(csv_file, out_dir, out_csv_report):
         df = pd.read_csv(csv_file)
     except FileNotFoundError:
         logger.info(f"[ERROR] Could not find input file: {csv_file}")
-        return pd.DataFrame()  # Return empty df
+        return pd.DataFrame() 
 
     if "Entry" not in df.columns:
         logger.info("[ERROR] CSV must contain 'Entry' column with UniProt accessions")
@@ -96,6 +94,11 @@ def fetch_alphafold(csv_file, out_dir, out_csv_report):
     results_df = pd.DataFrame(results)
     results_df.to_csv(out_csv_report, index=False)
     logger.info(f" Structure fetch complete -> {out_csv_report}")
+    
+    # Cleanup input df
+    del df
+    gc.collect()
+    
     return results_df
 
 
@@ -123,7 +126,7 @@ def combine_images(image_dir, out_file):
     cols = int(math.ceil(math.sqrt(n)))
     rows = math.ceil(n / cols)
     fig, axes = plt.subplots(rows, cols, figsize=(cols * 4, rows * 4), squeeze=False)
-    axes = axes.flatten()  # Flatten to 1D array for easy iteration
+    axes = axes.flatten() 
 
     for i, img_path in enumerate(images):
         ax = axes[i]
@@ -137,14 +140,17 @@ def combine_images(image_dir, out_file):
             logger.info(f"Failed to read image {img_path}: {e}")
             ax.axis("off")
 
-    # Hide any unused subplots
     for j in range(i + 1, len(axes)):
         axes[j].axis("off")
 
     plt.tight_layout()
 
-    ensure_dir_for_file(out_file)  # Create dir
+    ensure_dir_for_file(out_file) 
     plt.savefig(out_file, dpi=200)
-    plt.close()
+    
+    # Extensive cleanup to prevent matplotlib memory leaks
+    plt.close('all')
+    del fig, axes, images
+    gc.collect()
+    
     logger.info(f" Combined image saved -> {out_file}")
-

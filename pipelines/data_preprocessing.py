@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
+import gc
 from .utils import ensure_dir_for_file
 from mygene import MyGeneInfo
 
@@ -9,23 +10,21 @@ logger = logging.getLogger(__name__)
 def map_exons_to_genes(expression_file, mapping_file, output_file):
     logger.info("--------------------Mapping Exons To Genes--------------------")
     
-    # Load expression data (using float32 to cut RAM usage in half)
     expr = pd.read_csv(expression_file, sep="\t", index_col=0)
 
-    # Load and format the mapping file
     mapping = (
         pd.read_csv(mapping_file, sep="\t")[["id", "gene"]]
         .dropna()
         .drop_duplicates()
-        .set_index("id") # Keep "id" as the index to match expr
+        .set_index("id") 
     )
 
-    # The Fix: Use an inner join instead of adding a column.
-    # This automatically filters to the intersection AND adds the 'gene' column 
-    # cleanly without fragmenting the memory.
     expr = expr.join(mapping["gene"], how="inner")
+    
+    # Clean up mapping before grouping
+    del mapping
+    gc.collect()
 
-    # Group by the gene and calculate the mean
     gene_expr = expr.groupby("gene").mean()
 
     ensure_dir_for_file(output_file) 
@@ -33,6 +32,10 @@ def map_exons_to_genes(expression_file, mapping_file, output_file):
 
     logger.info(f"Gene-level expression saved to: {output_file}")
     logger.info(f"Final shape: {gene_expr.shape}")
+    
+    # Final cleanup
+    del expr, gene_expr
+    gc.collect()
 
 def filter_protein_coding(input_file, output_file, batch_size=1000):
     logger.info("--------------------Filtering Protein Coding--------------------")
@@ -59,11 +62,15 @@ def filter_protein_coding(input_file, output_file, batch_size=1000):
 
     filtered = gene_expr.loc[gene_expr.index.intersection(keep_genes)]
 
-    ensure_dir_for_file(output_file)  # Create dir if needed
+    ensure_dir_for_file(output_file) 
     filtered.to_csv(output_file)
 
     logger.info(f"Filtered {gene_expr.shape[0]} -> {filtered.shape[0]} (protein-coding only)")
     logger.info(f"Saved to: {output_file}")
+    
+    # Final cleanup
+    del gene_expr, filtered, all_genes, query_results, gene_types, keep_genes
+    gc.collect()
 
 
 def normalize_log(expr):
@@ -83,16 +90,18 @@ def select_hvgs(expr_file, out_hvgs, out_stats, n_hvgs=2000, min_mean=0.5):
     hvgs = var.sort_values(ascending=False).head(n_hvgs)
     hvgs_df = expr_f.loc[hvgs.index]
 
-    # Save HVGs
-    ensure_dir_for_file(out_hvgs)  # Create dir if needed
+    ensure_dir_for_file(out_hvgs) 
     hvgs_df.to_csv(out_hvgs)
 
-    # Save variance table
     stats_df = pd.DataFrame(
         {"mean": mean_expr.loc[hvgs.index], "variance": var.loc[hvgs.index]}
     )
-    ensure_dir_for_file(out_stats)  # Create dir if needed
+    ensure_dir_for_file(out_stats) 
     stats_df.to_csv(out_stats)
 
     logger.info(f"Saved top {n_hvgs} HVGs to {out_hvgs}")
     logger.info(f"Saved HVG stats to {out_stats}")
+    
+    # Final cleanup
+    del expr, expr_norm, mean_expr, expr_f, var, hvgs, hvgs_df, stats_df
+    gc.collect()

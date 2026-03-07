@@ -6,14 +6,21 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import minmax_scale
 from logging import getLogger
 import json
+import gc
 from .utils import ensure_dir_for_file
 from mygene import MyGeneInfo
 
 logger = getLogger(__name__)
+
 def build_adjacency(expr_df, power=6):
     corr = expr_df.T.corr()
     adj = corr.abs() ** power
     np.fill_diagonal(adj.to_numpy().copy(), 0.0)
+    
+    # Clean up massive correlation matrix
+    del corr
+    gc.collect()
+    
     return adj
 
 
@@ -60,7 +67,6 @@ def rank_and_annotate(
     top_n=20,
 ):
     logger.info("--------------------Rank Hubs and Annotate--------------------")
-    # --- Load files ---
     try:
         hvgs = pd.read_csv(hvgs_file, index_col=0)
         k_within = pd.read_csv(intramod_file, index_col=0)
@@ -77,27 +83,22 @@ def rank_and_annotate(
     if k_within.shape[1] == 1:
         k_within = k_within.iloc[:, 0]
 
-    # --- Expression stats ---
     mean_expr = expr.mean(axis=1)
     var_expr = expr.var(axis=1)
 
-    # --- Combine metrics ---
     genes = hvgs.index.intersection(expr.index)
     df = pd.DataFrame(index=genes)
     df["mean"] = mean_expr.reindex(df.index)
     df["variance"] = var_expr.reindex(df.index)
     df["kWithin"] = k_within.reindex(df.index).fillna(0.0)
 
-    # --- Normalize metrics ---
     df["mean_s"] = minmax_scale(df["mean"].fillna(0))
     df["var_s"] = minmax_scale(df["variance"].fillna(0))
     df["k_s"] = minmax_scale(df["kWithin"].fillna(0))
 
-    # --- Composite score ---
     df["score"] = 0.5 * df["k_s"] + 0.3 * df["var_s"] + 0.2 * df["mean_s"]
     df = df.sort_values("score", ascending=False)
 
-    # --- Annotate top genes ---
     mg = MyGeneInfo()
     top = df.head(max(top_n, 200)).index.tolist()
     try:
@@ -133,7 +134,7 @@ def rank_and_annotate(
 
         ann[name] = {
             "type_of_gene": q.get("type_of_gene"),
-            "uniprot": str(uni_raw),  # Ensure serializable
+            "uniprot": str(uni_raw),  
             "Entry": accession,
             "entrez": q.get("entrezgene"),
             "go": q.get("go"),
@@ -143,7 +144,6 @@ def rank_and_annotate(
     ann_df = pd.DataFrame.from_dict(ann, orient="index")
     merged = df.merge(ann_df, left_index=True, right_index=True, how="left")
 
-    # --- Targetability flag ---
     def flag_targetable(go):
         if not isinstance(go, dict):
             return ""
@@ -164,16 +164,19 @@ def rank_and_annotate(
 
     merged["targetability"] = merged["go"].apply(flag_targetable)
 
-    # --- Save outputs ---
     final = merged.head(top_n)
 
-    ensure_dir_for_file(all_ranked_file)  # Create dir
+    ensure_dir_for_file(all_ranked_file) 
     merged.to_csv(all_ranked_file)
 
-    ensure_dir_for_file(out_file)  # Create dir
+    ensure_dir_for_file(out_file)  
     final.to_csv(out_file)
 
     logger.info(f" Saved top {top_n} biomarkers -> {out_file}")
     logger.info(f" Full ranking saved -> {all_ranked_file}")
+    
+    # Final cleanup of memory heavy DataFrames
+    del hvgs, k_within, expr, df, mean_expr, var_expr, merged, modules
+    gc.collect()
+    
     return final
-
