@@ -7,9 +7,19 @@ from pipelines import run_pipeline
 from services.s3_upload_service import process_and_upload_analysis
 from services.clear_service import clear_all_folders
 import gc
-
+from os import makedirs
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+makedirs("Logs", exist_ok=True)
+
+# 2. نظبط إعدادات الـ Logging عشان تكتب في الفايل والـ Console
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", # شكل الرسالة بالوقت
+    handlers=[
+        logging.FileHandler("Logs/worker_log.txt", mode='a'),  # بيكتب في الفايل (a يعني append)
+        logging.StreamHandler()                                # بيكتب في الـ Console
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # Load configuration
