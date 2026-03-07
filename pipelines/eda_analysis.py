@@ -13,7 +13,7 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def run_simple_eda(gene_expr_coding, simple_cfg):
+def run_simple_eda(gene_expr_coding, files_cfg):
     # --- 4. EDA For the filtered Genes (Simple Variance-based) ---
     logger.info("--------------------EDA For the filtered Genes--------------------")
     try:

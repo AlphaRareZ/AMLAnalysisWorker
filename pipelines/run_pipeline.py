@@ -3,7 +3,7 @@ import pandas as pd
 from logging import getLogger
 
 # بنستورد الـ Functions من الفايلات بتاعتنا
-from utils import log, ensure_dir_for_file
+from utils import ensure_dir_for_file
 from data_preprocessing import map_exons_to_genes, filter_protein_coding, select_hvgs
 from network_analysis import build_adjacency, module_detection, module_eigengenes, intramodular_connectivity, rank_and_annotate
 from  building_structures import fetch_alphafold, render_proteins, combine_images
@@ -79,7 +79,7 @@ def main(expression_file, mapping_file, config_path="config.json"):
         logger.info(f"Error during module detection: {e}")
         return
     # --- 4. EDA For the filtered Genes ---
-    run_simple_eda(gene_expr_coding, files_cfg["simple_biomarkers"])
+    run_simple_eda(gene_expr_coding, files_cfg)
     # --- 5. Rank Hubs and Annotate (WGCNA-like) ---
     ranked_cfg = files_cfg["ranked_biomarkers"]
     final = rank_and_annotate(
