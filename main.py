@@ -1,12 +1,12 @@
 import json
 import logging
 from rabbit_mq.rabbit_mq_consumer import create_consumer
-from services.csv_top_10_rows_service import get_top_10_rows_from_output
 from services.download_service import download_file
 from services.message_producer import create_producer
 from pipelines import run_pipeline
 from services.s3_upload_service import process_and_upload_analysis
 from services.clear_service import clear_all_folders
+import gc
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -90,6 +90,11 @@ def process_request(message_data):
 
     finally:
         producer.close()
+        # <-- 2. Add this right here!
+        # Force a full garbage collection sweep after every single RabbitMQ message
+        # is fully processed or fails. This guarantees a clean slate for the next job.
+        gc.collect()
+        logger.info("Garbage collection triggered at end of worker cycle.")
 
 
 if __name__ == "__main__":
