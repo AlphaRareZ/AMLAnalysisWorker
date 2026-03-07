@@ -30,7 +30,7 @@ def run_simple_eda(gene_expr_coding, files_cfg):
         ensure_dir_for_file(simple_cfg["top20_csv"])
         top20_df.to_csv(simple_cfg["top20_csv"])
         logger.info("\nTop 20 biomarker genes (variance-based, hemoglobins excluded):")
-        logger.info(top20)
+        logger.info(f"{top20}")
         logger.info(f"\nSaved to: {simple_cfg['top20_csv']}")
 
         summary_stats = top20_df.describe()

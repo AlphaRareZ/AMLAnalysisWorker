@@ -31,8 +31,8 @@ def map_exons_to_genes(expression_file, mapping_file, output_file):
     ensure_dir_for_file(output_file) 
     gene_expr.to_csv(output_file)
 
-    logger.info("Gene-level expression saved to:", output_file)
-    logger.info("Final shape:", gene_expr.shape)
+    logger.info(f"Gene-level expression saved to: {output_file}")
+    logger.info(f"Final shape: {gene_expr.shape}")
 
 def filter_protein_coding(input_file, output_file, batch_size=1000):
     logger.info("--------------------Filtering Protein Coding--------------------")
@@ -77,7 +77,7 @@ def select_hvgs(expr_file, out_hvgs, out_stats, n_hvgs=2000, min_mean=0.5):
 
     mean_expr = expr_norm.mean(axis=1)
     expr_f = expr_norm.loc[mean_expr >= min_mean]
-    logger.info("After mean filter:", expr_f.shape)
+    logger.info(f"After mean filter: {expr_f.shape}")
 
     var = expr_f.var(axis=1)
     hvgs = var.sort_values(ascending=False).head(n_hvgs)

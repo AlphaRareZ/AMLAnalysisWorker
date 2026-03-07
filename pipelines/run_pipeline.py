@@ -50,11 +50,11 @@ def main(expression_file, mapping_file, config_path="config.json"):
     logger.info("--------------------Coexpression and Modules--------------------")
     try:
         expr = pd.read_csv(hvgs_file, index_col=0)
-        logger.info("HVG matrix shape:", expr.shape)
+        logger.info(f"HVG matrix shape: {expr.shape}")
 
         adj = build_adjacency(expr, power=6)
         modules, G = module_detection(adj)
-        logger.info("Detected modules:", {k: len(v) for k, v in modules.items()})
+        logger.info(f"Detected modules: { {k: len(v) for k, v in modules.items()} }")
 
         eig_df = module_eigengenes(expr, modules)
         me_file = files_cfg["module_eigengenes"]
@@ -93,8 +93,7 @@ def main(expression_file, mapping_file, config_path="config.json"):
     )
     if final is not None and not final.empty:
         logger.info("Top ranked biomarkers (WGCNA-like score):")
-        logger.info(
-            final[
+        logger.info(f"{final[
                 [
                     "score",
                     "kWithin",
@@ -104,7 +103,8 @@ def main(expression_file, mapping_file, config_path="config.json"):
                     "Entry",
                     "targetability",
                 ]
-            ]
+            ]}"
+            
         )
     else:
         logger.info("Ranking and annotation step failed or returned empty.")
