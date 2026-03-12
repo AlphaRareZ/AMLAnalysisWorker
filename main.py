@@ -77,7 +77,8 @@ def process_request(message_data):
             clear_all_folders()
         else:
             error_response = {
-                "AnalysisID": message_data.get("AnalysisID", "unknown"),
+                "analysis_id": message_data.get("AnalysisID", "unknown"),
+                "success": False,
                 "status": "error",
                 "message": "Missing required files: expression_file_url or mapping_file_url",
             }

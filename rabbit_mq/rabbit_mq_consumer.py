@@ -83,7 +83,7 @@ class RabbitMQConsumer:
             except Exception as e:
                 logger.error(f"Error processing message: {e}")
                 # Negative acknowledge and requeue
-                ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+                ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
         # Set up consumer with prefetch
         self.channel.basic_qos(prefetch_count=1)
