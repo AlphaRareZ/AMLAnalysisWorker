@@ -50,7 +50,7 @@ def fetch_alphafold(csv_file, out_dir, out_csv_report):
             )
             continue
 
-        name = gene # if gene != accession else accession
+        name = accession  if gene != accession else gene
         url = f"https://alphafold.ebi.ac.uk/files/AF-{accession}-F1-model_v6.pdb"
         save_path = os.path.join(out_dir, f"{name}.pdb")
 
