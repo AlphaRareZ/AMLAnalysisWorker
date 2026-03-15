@@ -55,12 +55,13 @@ def process_request(message_data):
 
             # Upload Files to Cloudflare R2 and retrieve urls
             response_data = process_and_upload_analysis(message_data["AnalysisID"])
-            response_data["username"] = message_data.get("Username", "unknown_user")
-            response_data["email"] = message_data.get("Email", "unknown_email")
-            # response_data = get_top_10_rows_from_output("Output", dest=response_data)
+            response_data["username"] = message_data["Username"]
+            response_data["email"] = message_data["Email"]
             # Print the formatted JSON output
-            print("\nFinal Response Message:")
-            print(json.dumps(response_data, indent=4))
+
+            # print("\nFinal Response Message:")
+            # print(json.dumps(response_data, indent=4))
+            
             # Publish response message to response_queue
             correlation_id = message_data.get("AnalysisID", None)
             success = producer.publish_message(
